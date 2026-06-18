@@ -2,26 +2,24 @@
 
 ## Exercise 1
 
-The data follow \(y=2x+1+\varepsilon\), and the model is \(f_\theta(x)=\theta_0+\theta_1x\). With the design matrix \(X=[1,x]\), the MSE is \(L(\theta)=\frac1N\|X\theta-y\|_2^2\), and its gradient is \(\nabla L(\theta)=\frac2N X^T(X\theta-y)\).
+The model is \(f_\theta(x)=\theta_0+\theta_1x\), and with the bias design matrix \(X\), the loss is \(L(\theta)=\frac1N\|X\theta-y\|_2^2\). The gradient is \(\frac2N X^T(X\theta-y)\). The batch sizes are specified, but the learning rate and number of epochs are not, so the notebook tries several values and selects the pair with the smallest trial loss before comparing the required batch sizes.
 
-Full GD uses all samples for every update, so its curve is smooth. Mini-batch SGD uses partial data, so its direction is noisy but cheaper. Batch size 1 has the highest variance, batch size 10 is still noisy but effective, batch size 50 is smoother, and batch size \(N\) recovers GD.
-
-Code explanation: the first lines generate the synthetic data and build `X` with a bias column. `l` computes MSE. `grad_l` computes the analytic gradient. `sgd` shuffles indices each epoch, selects mini-batches, applies \(\theta\leftarrow\theta-\eta g\), and stores the full loss and parameter path. `batch_sizes` contains the required mini-batches. The plots compare loss curves and parameter trajectories. The printed values show the learned intercept, slope, and final loss.
+Code explanation: `x`, `y`, `X`, and `Y` build the synthetic regression problem. `l` computes MSE. `grad_l` computes the exact gradient formula. `sgd` shuffles data, loops over mini-batches, updates parameters, and stores full loss and parameter path. `lr_candidates` and `epoch_candidates` perform the unspecified-parameter trials. `selected_lr` and `selected_epochs` are used for the final GD/SGD comparison.
 
 ## Exercise 2
 
-For a fixed \(\theta\), stochastic gradients differ because each mini-batch samples different data. The empirical variance \(\frac1{100}\sum_k\|g_k-\bar g\|^2\) decreases as batch size grows, since averaging more samples cancels noise. The batch size \(N\) gives the deterministic full gradient, so the variance is nearly zero.
+The exercise only says to fix a parameter vector, so the notebook tests several possible \(\theta\) values and selects one with a nontrivial full-gradient norm. At that same selected \(\theta\), stochastic gradients are sampled repeatedly. Larger mini-batches average more samples, so the empirical variance decreases and becomes nearly zero when the batch is the full dataset.
 
-Code explanation: `batch_sizes` selects the required values. `theta` fixes the point where all gradients are measured. The nested loop samples 100 batches, computes each mini-batch gradient, averages them, and evaluates the empirical variance formula. The plot shows variance against batch size. The printed output gives each variance and mean gradient.
+Code explanation: `theta_candidates` contains trial vectors. `theta_scores` measures full-gradient norms. `selected_idx` chooses the vector used in the variance experiment. The loop over `batch_sizes` samples 100 mini-batches, stores their gradients, computes their mean, and evaluates the empirical variance formula.
 
 ## Exercise 3
 
-The non-convex function has curved valleys and several stationary regions. The simulated stochastic gradient is \(g_k=\nabla L(\theta_k)+\varepsilon_k\). Small noise can help the trajectory avoid poor flat regions, while large noise prevents stable convergence because it keeps perturbing the direction even near a minimizer.
+The stochastic update uses \(g_k=\nabla L(\theta_k)+\varepsilon_k\). The notebook now tries several initial points and step sizes, selects the best stable pair, and then plots trajectories for different noise levels. It also plots a separate comparison over step sizes. Small noise can help movement through difficult regions; too much noise can prevent settling near a minimizer.
 
-Code explanation: `L` evaluates the 2D non-convex objective. `grad_L` implements its two partial derivatives. `noisy_gd` adds Gaussian noise with variance `sigma2` to the true gradient and updates the parameter. The grid code evaluates the function for contour plotting. The plotting loop overlays trajectories and loss curves for different noise levels. The final print reports the final point and loss for each noise variance.
+Code explanation: `L` and `grad_L` define the 2D non-convex function. `noisy_gd` adds Gaussian perturbations to the gradient. `theta0_candidates` and `eta_values` test unspecified initial point and step size choices. The contour plot shows selected-step trajectories for multiple noise variances. The second plot compares losses for multiple step sizes.
 
 ## Exercise 4
 
-For the insurance task, the model is linear in standardized features. Standardization makes age, BMI, children, and charges comparable in scale, preventing one coordinate from dominating the gradient. GD gives smooth loss and gradient-norm curves because each update uses the whole dataset. SGD oscillates because each mini-batch gives an approximate gradient. Larger batches reduce noise but cost more per update. Since all methods optimize the same convex quadratic MSE, they converge to the same region.
+The learning rate and batch sizes are specified, while the number of epochs is left open. The notebook tests several epoch counts using full GD and selects the one with the best final loss and gradient norm. All methods optimize the same standardized linear MSE, so they should converge to the same region; mini-batches oscillate more because their gradients are noisy.
 
-Code explanation: `load_insurance` reads `data/insurance.csv` or `insurance.csv` if present; otherwise it creates a compatible local dataset so the notebook runs. `X_scaled` and `Y_scaled` standardize features and target. `X_model` adds the bias column. `l` and `grad_l` implement MSE and its gradient. `train` performs either GD or SGD depending on `batch_size`, storing full loss and full-gradient norm at the end of each epoch. `methods` defines GD and the three SGD batch sizes. The plots compare MSE and full-gradient norm. The printed lines report final parameters, final loss, and final gradient norm.
+Code explanation: `load_insurance` reads the Kaggle file when available and otherwise creates a compatible local dataset. `X_scaled` and `Y_scaled` standardize the task. `train` implements GD or SGD depending on `batch_size`. `epoch_candidates` tests possible run lengths. The final plots compare MSE and full-gradient norm, and the print block reports parameters and final diagnostics.

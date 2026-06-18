@@ -2,26 +2,24 @@
 
 ## Exercise 1
 
-The two Gaussian clusters are linearly separable in most random draws because their centers are far apart. Logistic regression models \(P(y=1|x)=\sigma(\theta^T\tilde x)\), where \(\tilde x=[1,x_1,x_2]\). The decision boundary is \(\theta^T\tilde x=0\), which is a straight line in 2D because the score is linear in the features.
+The Gaussian cluster size and optimizer settings are not fully specified, so the notebook tests several sample sizes, learning rates, and epoch counts. It selects a sample size that gives clearly separated clusters and optimizer settings that give low BCE and high accuracy. Logistic regression has a linear score \(\theta^T\tilde x\), so its decision boundary \(\theta^T\tilde x=0\) is a line.
 
-Code explanation: the first block creates class 0 around `[-2,-2]` and class 1 around `[2,2]`. `X_model` adds the bias column. `sigmoid` computes probabilities stably. `bce` computes binary cross-entropy. `grad_bce` computes \(X^T(\sigma(X\theta)-y)/N\). `accuracy` thresholds probabilities at 0.5. The training loop runs full GD. The plot shows the data and line \(\theta_0+\theta_1x_1+\theta_2x_2=0\). The printed line reports parameters, final loss, and accuracy.
+Code explanation: `n_candidates` tests possible cluster sizes. `cluster_scores` measures separation between empirical class centers. `sigmoid`, `bce`, `grad_bce`, and `accuracy` implement logistic regression from scratch. `train_full_gd` runs full gradient descent. `lr_candidates` and `epoch_candidates` select optimization settings. The selected model is plotted with its decision boundary and training curves.
 
 ## Exercise 2
 
-Small batches make gradients noisier because they estimate the full average with fewer samples. This can make loss and accuracy oscillate, but each update is cheap. The full batch gives the smoothest curve, while batch size 10 is a compromise between speed and stability.
+The batch sizes are specified, but the learning rate is not. The notebook tests several SGD learning rates on batch size 10, selects the best one, and then compares batch sizes 1, 10, and full batch. Small batches produce noisier gradients and less smooth curves; large batches are smoother but each update is more expensive.
 
-Code explanation: `train_logistic_sgd` initializes parameters, shuffles data, applies mini-batch logistic-gradient updates, and records full-dataset BCE and accuracy after each epoch. `batch_sizes` selects 1, 10, and \(N\). The plotting loop compares loss and accuracy curves. The printed output reports final values and parameters.
+Code explanation: `train_logistic_sgd` performs mini-batch logistic-gradient updates. `lr_candidates_sgd` and `lr_scores_sgd` select the learning rate. `results` stores one training run for each required batch size. The plots show BCE and accuracy against epoch.
 
 ## Exercise 3
 
-Threshold 0.5 is the default conversion from probability to class. Lowering the threshold to 0.3 predicts more positives, increasing recall but often decreasing precision. Raising it to 0.7 predicts fewer positives, increasing precision when positive predictions are correct but reducing recall. The best threshold depends on the cost of false positives and false negatives.
+Lowering the threshold to 0.3 predicts more positives, which usually raises recall and lowers precision. Raising it to 0.7 predicts fewer positives, which usually raises precision and lowers recall. The best threshold depends on the practical cost of false positives and false negatives.
 
-Code explanation: `best_theta` takes the batch-size-10 model. `metrics` computes probabilities, thresholds them, counts TP, FP, FN, TN, and derives accuracy, precision, recall, and F1. The loop evaluates thresholds 0.3, 0.5, and 0.7.
+Code explanation: `best_theta` uses the batch-size-10 logistic model. `metrics` computes probabilities, thresholds them, counts TP, FP, FN, TN, and derives accuracy, precision, recall, and F1. The loop evaluates thresholds 0.3, 0.5, and 0.7.
 
 ## Exercise 4
 
-The diabetes pipeline uses standardized features, a bias term, BCE loss, and SGD or Adam. Normalization improves conditioning and keeps gradient magnitudes comparable across medical measurements. Adam uses first and second moment estimates, so it adapts learning rates coordinate by coordinate and often reduces loss faster than plain SGD. SGD can oscillate more because it uses the same learning rate for all coordinates and sees noisy batches.
+The SGD and Adam settings are specified by the exercise. The optional neural network has an unspecified hidden-layer width, so the notebook tries several hidden sizes and selects the one with the lowest trial loss. Standardization improves conditioning and keeps gradient magnitudes comparable. Adam usually adapts faster because it rescales updates using moment estimates.
 
-Code explanation: `load_diabetes` reads the Kaggle CSV if available; otherwise it creates a compatible binary classification dataset. `train_test_split` makes train and test sets. `mu` and `sigma` standardize the train data and apply the same scaling to test data. `train_sgd` applies mini-batch logistic regression with learning rate \(10^{-3}\). `train_adam` implements the Adam recurrences for `m`, `v`, bias-corrected estimates, and the adaptive update. The plots compare SGD and Adam loss and accuracy. The metrics loop evaluates final test BCE, accuracy, confusion matrix, precision, recall, and F1.
-
-Optional neural network: `train_nn` builds a one-hidden-layer ReLU network with sigmoid output. The forward pass computes hidden activations and probabilities. The backward pass applies BCE derivatives, ReLU derivatives, and gradient descent updates to both layers. The final plot compares logistic regression and the neural network losses.
+Code explanation: `load_diabetes` reads the Kaggle file when available and otherwise creates a compatible binary classification dataset. The train/test split and standardization prepare the data. `train_sgd` and `train_adam` optimize logistic regression. The metrics loop evaluates both methods. `train_nn` implements the optional one-hidden-layer ReLU network. `hidden_candidates` selects the hidden width used in the final neural-network comparison.
